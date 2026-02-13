@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세계화의 장단점 학습 퀴즈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .input-focus:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
+        <!-- 헤더 -->
+        <div class="bg-indigo-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold mb-2">🌍 세계화(Globalization)의 이해</h1>
+            <p class="opacity-90">장점과 단점을 분석하고 자신의 생각을 정리해 봅시다.</p>
+        </div>
+
+        <div class="p-6 md:p-10">
+            <div id="quiz-form">
+                <!-- 학생 정보 -->
+                <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">학번</label>
+                        <input type="text" id="student-id" placeholder="예: 30101" class="w-full p-3 border border-gray-300 rounded-lg input-focus">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-gray-700 mb-1">이름</label>
+                        <input type="text" id="student-name" placeholder="이름을 입력하세요" class="w-full p-3 border border-gray-300 rounded-lg input-focus">
+                    </div>
+                </div>
+
+                <hr class="mb-8">
+
+                <!-- 문제 1 -->
+                <div class="mb-10">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Q1. 세계화의 경제적 '장점'으로 가장 적절한 것은 무엇이며, 그 이유를 서술하시오.</h3>
+                    <div class="space-y-2 mb-4">
+                        <label class="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                            <input type="radio" name="q1" value="자본과 기술의 자유로운 이동" class="h-4 w-4 text-indigo-600">
+                            <span>자본과 기술의 자유로운 이동을 통한 경제 성장</span>
+                        </label>
+                        <label class="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                            <input type="radio" name="q1" value="국가 간 빈부격차 완화" class="h-4 w-4 text-indigo-600">
+                            <span>모든 국가의 균등한 부의 분배와 격차 완화</span>
+                        </label>
+                    </div>
+                    <textarea id="q1-reason" placeholder="선택한 이유 또는 추가적인 경제적 이점을 적어주세요." class="w-full p-3 border border-gray-300 rounded-lg h-24 input-focus"></textarea>
+                </div>
+
+                <!-- 문제 2 -->
+                <div class="mb-10">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Q2. 세계화로 인해 발생할 수 있는 '문화적 단점'은 무엇입니까?</h3>
+                    <p class="text-sm text-gray-500 mb-3">자신의 생각을 자유롭게 기술하세요. (예: 문화적 획일화, 전통문화 소멸 등)</p>
+                    <textarea id="q2-answer" placeholder="답변을 입력하세요." class="w-full p-3 border border-gray-300 rounded-lg h-32 input-focus"></textarea>
+                </div>
+
+                <!-- 문제 3 -->
+                <div class="mb-10">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Q3. 환경 문제와 관련하여 세계화가 주는 부정적 영향에 대해 설명하시오.</h3>
+                    <textarea id="q3-answer" placeholder="답변을 입력하세요." class="w-full p-3 border border-gray-300 rounded-lg h-32 input-focus"></textarea>
+                </div>
+
+                <!-- 제출 버튼 -->
+                <div class="text-center mt-10">
+                    <button onclick="submitToSheet()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transform transition active:scale-95">
+                        답안지 제출하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 결과 화면 (숨김) -->
+            <div id="result-view" class="hidden text-center py-10">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 text-green-600 rounded-full mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">제출 완료!</h2>
+                <p class="text-gray-600 mb-8">성공적으로 답안이 기록되었습니다.</p>
+                <div id="data-display" class="bg-gray-50 p-6 rounded-xl text-left text-sm font-mono border border-gray-200">
+                    <!-- 제출된 데이터 요약 -->
+                </div>
+                <button onclick="window.location.reload()" class="mt-8 text-indigo-600 font-medium hover:underline">새로 고침</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function submitToSheet() {
+            const studentId = document.getElementById('student-id').value;
+            const studentName = document.getElementById('student-name').value;
+            const q1Choice = document.querySelector('input[name="q1"]:checked')?.value || '선택 안 함';
+            const q1Reason = document.getElementById('q1-reason').value;
+            const q2Answer = document.getElementById('q2-answer').value;
+            const q3Answer = document.getElementById('q3-answer').value;
+
+            if (!studentId || !studentName) {
+                alert('학번과 이름을 모두 입력해 주세요.');
+                return;
+            }
+
+            // 구글 설문지나 Google Apps Script Web App URL로 데이터를 전송하는 로직을 여기에 구현할 수 있습니다.
+            // 여기서는 시연을 위해 데이터 요약을 보여주는 방식으로 처리합니다.
+            
+            const data = {
+                timestamp: new Date().toLocaleString(),
+                id: studentId,
+                name: studentName,
+                q1: `${q1Choice} (${q1Reason})`,
+                q2: q2Answer,
+                q3: q3Answer
+            };
+
+            // 결과 화면 표시
+            document.getElementById('quiz-form').classList.add('hidden');
+            const resultView = document.getElementById('result-view');
+            resultView.classList.remove('hidden');
+
+            const display = document.getElementById('data-display');
+            display.innerHTML = `
+                <p><strong>제출 시간:</strong> ${data.timestamp}</p>
+                <p><strong>학번/이름:</strong> ${data.id} / ${data.name}</p>
+                <hr class="my-2">
+                <p><strong>Q1:</strong> ${data.q1}</p>
+                <p><strong>Q2:</strong> ${data.q2}</p>
+                <p><strong>Q3:</strong> ${data.q3}</p>
+                <p class="mt-4 text-blue-600 text-xs italic">* 실제 구글 시트 연동 시 Google Apps Script URL로 POST 요청을 보내도록 설정하면 됩니다.</p>
+            `;
+
+            // 클립보드 복사 안내 (교사에게 전달용)
+            const summaryText = `[세계화 답안] ${data.id} ${data.name} | Q1: ${data.q1} | Q2: ${data.q2} | Q3: ${data.q3}`;
+            console.log("제출 데이터:", summaryText);
+        }
+    </script>
+</body>
+</html>
