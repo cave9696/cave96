@@ -9,6 +9,15 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
         body { font-family: 'Noto Sans KR', sans-serif; }
         .input-focus:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen p-4 md:p-8">
@@ -28,7 +37,7 @@
                         <input type="text" id="student-id" placeholder="예: 30101" class="w-full p-3 border border-gray-300 rounded-lg input-focus">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-gray-700 mb-1">이름</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">이름</label>
                         <input type="text" id="student-name" placeholder="이름을 입력하세요" class="w-full p-3 border border-gray-300 rounded-lg input-focus">
                     </div>
                 </div>
@@ -66,9 +75,11 @@
 
                 <!-- 제출 버튼 -->
                 <div class="text-center mt-10">
-                    <button onclick="submitToSheet()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transform transition active:scale-95">
-                        답안지 제출하기
+                    <button id="submit-btn" onclick="submitToSheet()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transform transition active:scale-95 flex items-center justify-center mx-auto">
+                        <span id="btn-text">답안지 제출하기</span>
+                        <div id="btn-loader" class="loading-spinner hidden ml-3"></div>
                     </button>
+                    <p class="text-xs text-gray-400 mt-4 italic">제출 시 교사의 구글 시트로 데이터가 전송됩니다.</p>
                 </div>
             </div>
 
@@ -79,43 +90,95 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">제출 완료!</h2>
-                <p class="text-gray-600 mb-8">성공적으로 답안이 기록되었습니다.</p>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">제출 성공!</h2>
+                <p class="text-gray-600 mb-8">성공적으로 구글 시트에 답안이 기록되었습니다.</p>
                 <div id="data-display" class="bg-gray-50 p-6 rounded-xl text-left text-sm font-mono border border-gray-200">
                     <!-- 제출된 데이터 요약 -->
                 </div>
-                <button onclick="window.location.reload()" class="mt-8 text-indigo-600 font-medium hover:underline">새로 고침</button>
+                <button onclick="window.location.reload()" class="mt-8 text-indigo-600 font-medium hover:underline">다른 답변 제출하기</button>
             </div>
         </div>
     </div>
 
     <script>
-        function submitToSheet() {
-            const studentId = document.getElementById('student-id').value;
-            const studentName = document.getElementById('student-name').value;
+        /**
+         * [교사용 가이드]
+         * 1. 구글 시트 생성 -> 확장 프로그램 -> Apps Script 클릭
+         * 2. 아래 코드를 Apps Script에 붙여넣고 '웹 앱'으로 배포하세요.
+         * * function doPost(e) {
+         * var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+         * var data = JSON.parse(e.postData.contents);
+         * sheet.appendRow([data.timestamp, data.id, data.name, data.q1, data.q2, data.q3]);
+         * return ContentService.createTextOutput(JSON.stringify({result: "success"})).setMimeType(ContentService.MimeType.JSON);
+         * }
+         */
+
+        // 여기에 배포한 웹 앱 URL을 입력하세요.
+        const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE"; 
+
+        async function submitToSheet() {
+            const studentId = document.getElementById('student-id').value.trim();
+            const studentName = document.getElementById('student-name').value.trim();
             const q1Choice = document.querySelector('input[name="q1"]:checked')?.value || '선택 안 함';
-            const q1Reason = document.getElementById('q1-reason').value;
-            const q2Answer = document.getElementById('q2-answer').value;
-            const q3Answer = document.getElementById('q3-answer').value;
+            const q1Reason = document.getElementById('q1-reason').value.trim();
+            const q2Answer = document.getElementById('q2-answer').value.trim();
+            const q3Answer = document.getElementById('q3-answer').value.trim();
 
             if (!studentId || !studentName) {
                 alert('학번과 이름을 모두 입력해 주세요.');
                 return;
             }
 
-            // 구글 설문지나 Google Apps Script Web App URL로 데이터를 전송하는 로직을 여기에 구현할 수 있습니다.
-            // 여기서는 시연을 위해 데이터 요약을 보여주는 방식으로 처리합니다.
+            // 로딩 상태 시작
+            const btn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnLoader = document.getElementById('btn-loader');
             
-            const data = {
+            btn.disabled = true;
+            btnText.innerText = "제출 중...";
+            btnLoader.classList.remove('hidden');
+
+            const payload = {
                 timestamp: new Date().toLocaleString(),
                 id: studentId,
                 name: studentName,
-                q1: `${q1Choice} (${q1Reason})`,
+                q1: `${q1Choice} / 사유: ${q1Reason}`,
                 q2: q2Answer,
                 q3: q3Answer
             };
 
-            // 결과 화면 표시
+            try {
+                // 실제 연동 시 SCRIPT_URL이 유효해야 합니다.
+                // 만약 URL을 설정하지 않았다면 알림을 띄우고 시연 모드로 작동합니다.
+                if (SCRIPT_URL === "https://script.google.com/macros/s/AKfycbwVN1A_2B2tWB4EjT_BnkSDBj7Ay_-tkfBSJM7TZWIelDn9BUcblTqF234XuurVeL1wBw/exec") {
+                    console.log("시연 모드 데이터:", payload);
+                    setTimeout(() => showSuccess(payload), 1000);
+                    return;
+                }
+
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.result === "success") {
+                    showSuccess(payload);
+                } else {
+                    throw new Error("서버 오류");
+                }
+            } catch (error) {
+                console.error("제출 실패:", error);
+                alert("제출 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+                
+                // 버튼 복구
+                btn.disabled = false;
+                btnText.innerText = "답안지 제출하기";
+                btnLoader.classList.add('hidden');
+            }
+        }
+
+        function showSuccess(data) {
             document.getElementById('quiz-form').classList.add('hidden');
             const resultView = document.getElementById('result-view');
             resultView.classList.remove('hidden');
@@ -124,16 +187,11 @@
             display.innerHTML = `
                 <p><strong>제출 시간:</strong> ${data.timestamp}</p>
                 <p><strong>학번/이름:</strong> ${data.id} / ${data.name}</p>
-                <hr class="my-2">
-                <p><strong>Q1:</strong> ${data.q1}</p>
-                <p><strong>Q2:</strong> ${data.q2}</p>
-                <p><strong>Q3:</strong> ${data.q3}</p>
-                <p class="mt-4 text-blue-600 text-xs italic">* 실제 구글 시트 연동 시 Google Apps Script URL로 POST 요청을 보내도록 설정하면 됩니다.</p>
+                <hr class="my-2 border-dashed">
+                <p class="mb-1"><strong>Q1 요약:</strong> ${data.q1.substring(0, 50)}...</p>
+                <p class="mb-1"><strong>Q2 요약:</strong> ${data.q2.substring(0, 50)}...</p>
+                <p><strong>Q3 요약:</strong> ${data.q3.substring(0, 50)}...</p>
             `;
-
-            // 클립보드 복사 안내 (교사에게 전달용)
-            const summaryText = `[세계화 답안] ${data.id} ${data.name} | Q1: ${data.q1} | Q2: ${data.q2} | Q3: ${data.q3}`;
-            console.log("제출 데이터:", summaryText);
         }
     </script>
 </body>
